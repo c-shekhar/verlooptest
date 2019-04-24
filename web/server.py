@@ -1,6 +1,9 @@
+from gevent import monkey
+monkey.patch_all()
+
 from flask import request, jsonify
 from web import app, logger
-import requests
+import requests, grequests
 from requests.exceptions import HTTPError, ConnectionError
 from time import strftime
 import traceback
@@ -58,11 +61,26 @@ def get_orgs_repos():
 				return jsonify({'results' : [],
 								'error' : str(err)})
 			
-			response = response.json()
-			repos = []
+			response_headers = dict(response.headers)
+			responses = response.json()
 
+			## If response is paginated, check for 'Link' key in header
+			if 'Link' in response_headers:
+				link_info = response_headers['Link']
+				## parse last page number
+				num_pages = int(link_info.split(';')[1].split('page=')[-1].strip('>'))
+				## make urls with query strings against each page
+				urls = [f"{url}?page={page}" for page in range(2, num_pages + 1)]
+				## asynchronously fetch from all urls
+				rs = (grequests.get(u) for u in urls)
+				rs = grequests.map(rs)
+				## append each response to responses
+				for r in rs:
+					responses = responses + r.json() if r else []
+
+			repos = []
 			## Serializing data
-			for repo_info in response:
+			for repo_info in responses:
 				repos.append(
 							  {
 								'name' : repo_info['name'],
@@ -77,7 +95,7 @@ def get_orgs_repos():
 			## Returning the final serialized result
 			return jsonify(formatted_response)
 		
-		# In case there is any other error while serving the request
+		## In case there is any other error while serving the request
 		except Exception as e:
 			return jsonify({'results' : [],
 							'error':"Unknown error"})

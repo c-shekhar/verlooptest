@@ -14,6 +14,15 @@ class TestCases(unittest.TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertEqual(len(data['results']), 3)
 
+	#test for valid organization-id with paginated response from github
+	def test_paginated_response(self):
+		expected_result = ["react","react-native","create-react-app"]
+		response = self.app.post("/repos",json={'org':'facebook'})
+		data = json.loads(response.get_data(as_text=True))
+		self.assertEqual(response.status_code, 200)
+		top_repos = [repo['name'] for repo in data['results']]
+		self.assertEqual(top_repos, expected_result)
+
 	#test for invalid organization-id
 	def test_invalid_organization_repos(self):
 		response = self.app.post("/repos",json={'org':'xxx'})
