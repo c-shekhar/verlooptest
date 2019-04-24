@@ -7,7 +7,12 @@ import traceback
 
 @app.route('/repos', methods = ['GET','POST'])
 def get_orgs_repos():
-	'''Gives top three repos of an organization'''
+	'''
+	RETURNS top three repositories of an organization(for valid organization-id).
+	GIVES HTTP Error if organization doesn't exist.
+	GIVES Connection Error in absence of internet.
+	GIVES Invalid Request for Incorrect Request type or Payload.
+	'''
 
 	formatted_response = {'results' : []}
 	## If request is a valid POST request
@@ -27,7 +32,7 @@ def get_orgs_repos():
 								'error' : "Organization-id not in payload"})
 			
 			## Getting organization-id from payload
-			org_id = payload['org']
+			org_id = str(payload['org']).lower()
 			try:
 				## calling github api to fetch list of organization repos
 				url = f"https://api.github.com/orgs/{org_id}/repos"
