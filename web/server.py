@@ -8,6 +8,9 @@ from requests.exceptions import HTTPError, ConnectionError
 from time import strftime
 import traceback
 
+import os
+key = f"token {os.environ['GITHUB_OAUTH_KEY']}"
+
 @app.route('/repos', methods = ['GET','POST'])
 def get_orgs_repos():
 	'''
@@ -39,7 +42,7 @@ def get_orgs_repos():
 			try:
 				## calling github api to fetch list of organization repos
 				url = f"https://api.github.com/orgs/{org_id}/repos"
-				response = requests.get(url)
+				response = requests.get(url, headers={'Authorization': key})
 				## checking response from github api for exception handling 
 				response.raise_for_status()
 
@@ -72,7 +75,7 @@ def get_orgs_repos():
 				## make urls with query strings against each page
 				urls = [f"{url}?page={page}" for page in range(2, num_pages + 1)]
 				## asynchronously fetch from all urls
-				rs = (grequests.get(u) for u in urls)
+				rs = (grequests.get(u,headers={'Authorization': key}) for u in urls)
 				rs = grequests.map(rs)
 				## append each response to responses
 				for r in rs:

@@ -1,5 +1,7 @@
 FROM python:3.6
 
+ENV GITHUB_OAUTH_KEY d057c87657c4fa14177386f905a5207bfa2b649c
+
 COPY . /verloop/
 WORKDIR /verloop/
 
